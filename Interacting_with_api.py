@@ -27,7 +27,11 @@ def write_in_csv():
     with open('data.csv', 'w') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=field_names)
         writer.writeheader()
-        writer.writerows(data_after_filteration)
+        for data in data_after_filteration:
+            writer.writerow(data)
+          
+      return {"message":"Successfully written!"}
 
-        
-write_in_csv()
+
+if __name__ == "__main__":
+    write_in_csv()

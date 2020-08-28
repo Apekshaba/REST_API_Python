@@ -1,61 +1,30 @@
 #importing all the neccessary modules for the script
-import pandas as pd
 import requests
 import csv
-from abc import ABC, abstractmethod
-import os
 
-# environment variable
-APP_ID = os.getenv("APP_USER")
 
-# fetching the data from given public api and also checking for the possible errors it could throw
-result = requests.get("https://api.github.com/search/repositories?q=is:public").json()  #converting it to the json format
-if not result:
-    raise ValueError
+result = requests.get(input("Enter API url from where you want to fetch data:"))
+if result.status_code >= 200:
+    result = result.json()
 else:
-    pass
+    raise ValueError
 
-#creating an abstract class for writing data into a seperate format
-class data_generator(ABC):
+new_result = result['items']
 
-    def __init__(self, value):
-        self.value = value
-        super().__init__()
-
-
-    @abstractmethod
-    def write_in(result):
-        pass
+filtered_data = {}
+def filter_func():
+    for data in new_result:
+        filtered_data = {column: data[column] for column in ("name", "description", "html_url", "stargazers_count", "watchers_count")}
+    return filtered_data
 
 
-#class to generate csv file which is inheriting data_generator class
-class csv_generator(data_generator):
+def write_in_csv():
+    data_after_filteration = filter_func()
+    field_names = data_after_filteration.keys()
 
-    def append_data(result):
-        with open("data.csv",'r') as csvdata:
-            comp1 = list(csvdata.readline(result,limit=1))
-            writer = csv.DictWriter(csvdata)
-            if(comp1 == list(writer.writeheader())):
-                writer.writerows(result["items"])
-            else:
-                writer.writeheader()  # writting headers to the csv file
-                writer.writerows(result["items"])
+    with open('data.csv', 'w') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=field_names)
+        writer.writeheader()
+        writer.writerows(data_after_filteration)
 
-
-    def write_in(result):#abstract method of csv_generator class
-        try:
-            field_names = result["items"][0].keys() #fetching all the field names from the data being fetched
-
-            with open('data.csv', 'a'):
-                result.append_data(result)
-            #fetching the only columns we want from the csv file we generated
-            data=pd.read_csv("data.csv",usecols=['name','description','html_url','watchers_count','stargazers_count','forks_count'])
-        except Exception:
-            raise ValueError
-            return data
-
-
-class xls_generator(data_generator):
-
-    def write_in(self):
-        pass
+write_in_csv()
